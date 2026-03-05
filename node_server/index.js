@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
 import { createClient } from '@supabase/supabase-js';
 import { sendEmail } from './emailService.js';
 
@@ -22,54 +24,125 @@ if (!supabaseUrl || !supabaseKey) {
 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Helper para buscar configurações de SMTP no banco
+// --- 5. LOGS E DEPURAÇÃO (Padrão profissional requisitado) ---
+const logPath = path.join(process.cwd(), 'notification_debug.log');
+
+function logNotification(details) {
+    const timestamp = new Date().toLocaleString('pt-BR');
+    const status = details.success ? '✅ SUCESSO' : '❌ ERRO';
+    const logEntry = `[${timestamp}] [${status}] TO: ${details.to} | SUBJECT: ${details.subject} ${details.error ? '| ERROR: ' + details.error : ''}\n`;
+
+    console.log(logEntry.trim());
+    try {
+        fs.appendFileSync(logPath, logEntry);
+    } catch (err) {
+        console.error('Falha ao escrever no log:', err);
+    }
+}
+
+// --- 3. SISTEMA DE TEMPLATES ---
+function renderTemplate(templateName, vars) {
+    const templates = {
+        APPROVE_POC: `
+            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+                <div style="background: #00D26A; padding: 24px; color: black; text-align: center;">
+                    <h2 style="margin: 0;">Homologação Aprovada</h2>
+                </div>
+                <div style="padding: 32px; background: white;">
+                    <p>Olá, uma nova homologação foi agendada e você é o analista responsável.</p>
+                    <div style="background: #f8f9fa; padding: 24px; border-radius: 8px; margin: 24px 0; border-left: 4px solid #00D26A;">
+                        <p style="margin: 0 0 8px 0;"><strong>POC:</strong> {{poc_code}}</p>
+                        <p style="margin: 0 0 8px 0;"><strong>Cliente:</strong> {{client_name}}</p>
+                        <p style="margin: 0 0 8px 0;"><strong>Analista:</strong> {{analyst_name}}</p>
+                        <p style="margin: 0 0 8px 0;"><strong>Data:</strong> {{scheduled_date}} às {{requested_time}}</p>
+                        <p style="margin: 0;"><strong>Local:</strong> {{address}}</p>
+                    </div>
+                    <p>O convite de calendário (ICS) foi anexado a este email para sincronização com seu Outlook/Google.</p>
+                    <hr style="border: 0; border-top: 1px solid #eee; margin: 32px 0;" />
+                    <p style="font-size: 12px; color: #999; text-align: center;">Sistema Techub POC Automação</p>
+                </div>
+            </div>
+        `,
+        TEST_EMAIL: `
+            <div style="font-family: Arial, sans-serif; background: #0a0a0a; color: #f4f4f5; padding: 32px;">
+                <div style="max-width: 520px; margin: auto; background: #18181b; padding: 32px; border-radius: 16px; border: 1px solid #27272a;">
+                    <h2 style="color: #00D26A; margin-top: 0;">✅ Email de Teste</h2>
+                    <p>Este é um email de teste disparado pelo novo backend <strong>Pro</strong>.</p>
+                    <p>Se você recebeu esta mensagem, o roteamento SMTP via Nodemailer está operando corretamente e puxando os dados do banco.</p>
+                    <hr style="border-color: #27272a; margin: 24px 0;" />
+                    <p style="color: #71717a; font-size: 12px;">Techub POC Scheduling System</p>
+                </div>
+            </div>
+        `
+    };
+
+    let html = templates[templateName] || '';
+    Object.keys(vars).forEach(key => {
+        const regex = new RegExp(`{{${key}}}`, 'g');
+        html = html.replace(regex, vars[key] || 'Não informado');
+    });
+    return html;
+}
+
+// Helper para buscar configurações de SMTP no banco (Totalmente Dinâmico)
 async function getSmtpSettings() {
     const { data, error } = await supabase
         .from('system_settings')
         .select('*')
-        .in('key', ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from']);
+        .like('key', 'smtp_%');
 
     if (error) throw error;
 
     const settings = {};
     data.forEach(row => { settings[row.key] = row.value; });
 
-    const required = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_pass', 'smtp_from'];
+    // Fallback de Senha: se 'smtp_pass' estiver vazio, tenta 'smtp_password'
+    const finalPass = settings.smtp_pass || settings.smtp_password;
+    // Fallback de Remetente: se 'smtp_from' estiver vazio, tenta 'smtp_from_email'
+    const finalFrom = settings.smtp_from || settings.smtp_from_email;
+
+    const required = ['smtp_host', 'smtp_port', 'smtp_user'];
     const missing = required.filter(k => !settings[k]);
 
-    if (missing.length > 0) {
-        throw new Error(`Configurações SMTP incompletas: ${missing.join(', ')}`);
+    if (missing.length > 0 || !finalPass || !finalFrom) {
+        throw new Error(`Configurações SMTP incompletas no Banco. Verifique Host, Porta, Usuário, Senha e Remetente.`);
     }
 
-    return settings;
+    return {
+        ...settings,
+        smtp_pass: finalPass,
+        smtp_from: finalFrom,
+        // Formato amigável do remetente
+        formatted_from: settings.smtp_from_name
+            ? `"${settings.smtp_from_name}" <${finalFrom}>`
+            : finalFrom
+    };
 }
 
-// Endpoint de saúde
+// --- ENDPOINTS ---
+
 app.get('/health', (req, res) => {
-    res.json({ status: 'ok', service: 'Techub SMTP Node Server' });
+    res.json({ status: 'ok', service: 'Techub Backend v2 Pro' });
 });
 
-// Endpoint: Testar Conexão
+// Endpoint: Testar Conexão (Botão nas Configurações)
 app.post('/test-connection', async (req, res) => {
     try {
         const cfg = await getSmtpSettings();
-
-        // No Nodemailer, o verify() já testa a conexão
         await sendEmail({
             host: cfg.smtp_host,
             port: cfg.smtp_port,
             secure: cfg.smtp_port === '465',
             user: cfg.smtp_user,
             pass: cfg.smtp_pass,
-            from: cfg.smtp_from,
-            to: cfg.smtp_user, // Envia para o próprio usuário para testar
+            from: cfg.formatted_from,
+            to: cfg.smtp_user,
             subject: 'Teste de Conexão SMTP',
             html: '<p>Teste de conexão bem sucedido!</p>'
         });
-
-        res.json({ success: true, message: '✅ Conexão SMTP estabelecida e email de teste enviado!' });
+        res.json({ success: true, message: '✅ Conexão estabelecida e email enviado!' });
     } catch (error) {
-        console.error('Erro no test-connection:', error);
+        logNotification({ to: 'Test', subject: 'Falha Teste Conexão', success: false, error: error.message });
         res.status(500).json({ success: false, error: error.message });
     }
 });
@@ -81,37 +154,27 @@ app.post('/send-test-email', async (req, res) => {
 
     try {
         const cfg = await getSmtpSettings();
-
+        const html = renderTemplate('TEST_EMAIL', {});
         await sendEmail({
             host: cfg.smtp_host,
             port: cfg.smtp_port,
             secure: cfg.smtp_port === '465',
             user: cfg.smtp_user,
             pass: cfg.smtp_pass,
-            from: cfg.smtp_from,
+            from: cfg.formatted_from,
             to,
-            subject: '✅ Techub POC — Teste de Email (Node.js)',
-            html: `
-                <div style="font-family: Arial, sans-serif; background: #0a0a0a; color: #f4f4f5; padding: 32px;">
-                    <div style="max-width: 520px; margin: auto; background: #18181b; padding: 32px; border-radius: 16px; border: 1px solid #27272a;">
-                        <h2 style="color: #00D26A; margin-top: 0;">✅ Email de Teste</h2>
-                        <p>Este é um email de teste disparado pelo novo backend <strong>Node.js</strong>.</p>
-                        <p>Se você recebeu esta mensagem, o roteamento SMTP via Nodemailer está operando corretamente.</p>
-                        <hr style="border-color: #27272a; margin: 24px 0;" />
-                        <p style="color: #71717a; font-size: 12px;">Techub POC Scheduling System</p>
-                    </div>
-                </div>
-            `
+            subject: '✅ Techub POC — Teste de Email (Node.js Pro)',
+            html
         });
-
+        logNotification({ to, subject: 'Email de Teste', success: true });
         res.json({ success: true, message: `✅ Email enviado para ${to}` });
     } catch (error) {
-        console.error('Erro no send-test-email:', error);
+        logNotification({ to: to || 'N/A', subject: 'Falha Email Teste', success: false, error: error.message });
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
-// Endpoint: Aprovar POC com Sorteio Round Robin
+// Endpoint: Aprovar POC (Gatilho da Central de Análise)
 app.post('/approve-poc', async (req, res) => {
     const { poc_id } = req.query;
     if (!poc_id) return res.status(400).json({ success: false, error: 'poc_id ausente.' });
@@ -119,7 +182,7 @@ app.post('/approve-poc', async (req, res) => {
     try {
         const cfg = await getSmtpSettings();
 
-        // 1. Buscar detalhes da POC
+        // 1. Detalhes da POC
         const { data: poc, error: pocError } = await supabase
             .from('pocs')
             .select('*, poc_types(name, duration_hours)')
@@ -128,154 +191,88 @@ app.post('/approve-poc', async (req, res) => {
 
         if (pocError || !poc) throw new Error('POC não encontrada.');
 
-        // 2. Lógica Round Robin para selecionar Analista
-        // Determinamos a tag baseada no tipo da POC
+        // 2. Round Robin
         const isSoftware = (poc.poc_types.name.toUpperCase() || '').includes('SOFTWARE');
         const requiredTag = isSoftware ? 'SOFTWARE' : 'HARDWARE';
 
-        // Buscamos analistas ativos
-        let { data: analysts, error: analystsError } = await supabase
+        let { data: analysts } = await supabase
             .from('analysts')
             .select('*')
             .eq('active', true)
             .order('last_assigned_at', { ascending: true, nullsFirst: true });
 
-        if (analystsError) throw analystsError;
-        if (!analysts || analysts.length === 0) throw new Error('Nenhum analista ativo encontrado no sistema.');
+        if (!analysts || analysts.length === 0) throw new Error('Nenhum analista ativo.');
 
-        // Filtramos por tag (se houver analistas com a tag específica, senão pegamos os gerais)
         let selectedAnalyst = analysts.find(a => a.type_tag === requiredTag || a.type_tag === 'HARDWARE_SOFTWARE');
-
-        // Se ainda não achou, pega o primeiro da fila (mais antigo)
         if (!selectedAnalyst) selectedAnalyst = analysts[0];
 
-        console.log(`[Round Robin] Analista selecionado: ${selectedAnalyst.name} para POC ${poc.poc_code}`);
-
-        // 3. Atualizar POC e Analista no Banco (Simulando uma transação lógica)
+        // 3. Persistência
         const now = new Date().toISOString();
+        await supabase.from('pocs').update({
+            assigned_analyst_id: selectedAnalyst.id,
+            status: 'SCHEDULED',
+            updated_at: now
+        }).eq('id', poc_id);
 
-        // Atualiza a POC
-        const { error: updatePocError } = await supabase
-            .from('pocs')
-            .update({
-                assigned_analyst_id: selectedAnalyst.id,
-                status: 'SCHEDULED',
-                updated_at: now
-            })
-            .eq('id', poc_id);
+        await supabase.from('analysts').update({ last_assigned_at: now }).eq('id', selectedAnalyst.id);
 
-        if (updatePocError) throw updatePocError;
-
-        // Atualiza o Analista
-        await supabase
-            .from('analysts')
-            .update({ last_assigned_at: now })
-            .eq('id', selectedAnalyst.id);
-
-        // 4. Configurar horários para o convite
-        // scheduled_date pode vir como ISO string (2026-03-12T00:00:00+00:00) ou apenas data.
-        // Pegamos apenas a parte YYYY-MM-DD para garantir consistência.
+        // 4. Datas
         const datePart = poc.scheduled_date.split('T')[0];
         const timePart = poc.requested_time || '09:00';
-
-        console.log(`[Debug Date] datePart: ${datePart}, timePart: ${timePart}`);
-
         const startTime = new Date(`${datePart}T${timePart}:00`);
-
-        if (isNaN(startTime.getTime())) {
-            throw new Error(`Data ou hora inválida na POC: ${datePart} ${timePart}`);
-        }
-
         const duration = poc.duration_hours || poc.poc_types.duration_hours || 4;
         const endTime = new Date(startTime.getTime() + duration * 60 * 60 * 1000);
 
-        // 5. Gerar ICS
-        const formatDateICS = (date) => {
-            if (!date || isNaN(date.getTime())) return new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-            return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
-        };
-        const summary = `Homologação Techub: ${poc.poc_types.name} - ${poc.client_name}`;
-        const description = `POC ${poc.poc_code}\nCliente: ${poc.client_name}\nAnalista: ${selectedAnalyst.name}\nTipo: ${poc.poc_types.name}\nLocal: ${poc.address || 'Remoto'}`;
-
+        // 5. ICS
+        const formatDateICS = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
         const icsContent = [
-            'BEGIN:VCALENDAR',
-            'VERSION:2.0',
-            'PRODID:-//Techub//Scheduling//PT',
-            'METHOD:REQUEST',
+            'BEGIN:VCALENDAR', 'VERSION:2.0', 'METHOD:REQUEST',
             'BEGIN:VEVENT',
             `UID:${poc.id}@techub.com.br`,
             `DTSTAMP:${formatDateICS(new Date())}`,
             `DTSTART:${formatDateICS(startTime)}`,
             `DTEND:${formatDateICS(endTime)}`,
-            `SUMMARY:${summary}`,
-            `DESCRIPTION:${description.replace(/\n/g, '\\n')}`,
-            `LOCATION:${poc.address || 'Remoto'}`,
-            'STATUS:CONFIRMED',
-            'SEQUENCE:0',
-            'END:VEVENT',
-            'END:VCALENDAR'
+            `SUMMARY:Homologação: ${poc.client_name}`,
+            `DESCRIPTION:POC ${poc.poc_code}\\nAnalista: ${selectedAnalyst.name}`,
+            'END:VEVENT', 'END:VCALENDAR'
         ].join('\r\n');
 
-        // 6. Preparar destinatários
-        const recipients = [
-            selectedAnalyst.microsoft_email,
-            poc.contact_email,
-            poc.commercial_contact_email,
-            poc.manufacturer_contact_email
-        ].filter(Boolean);
+        // 6. Template & Envio
+        const html = renderTemplate('APPROVE_POC', {
+            poc_code: poc.poc_code,
+            client_name: poc.client_name,
+            analyst_name: selectedAnalyst.name,
+            scheduled_date: datePart,
+            requested_time: timePart,
+            address: poc.address || 'Remoto'
+        });
 
-        // 7. Enviar Email
+        const recipients = [selectedAnalyst.microsoft_email, poc.contact_email, poc.commercial_contact_email].filter(Boolean);
+
         await sendEmail({
             host: cfg.smtp_host,
             port: cfg.smtp_port,
             secure: cfg.smtp_port === '465',
             user: cfg.smtp_user,
             pass: cfg.smtp_pass,
-            from: cfg.smtp_from,
+            from: cfg.formatted_from,
             to: recipients.join(', '),
-            subject: `📅 Convite: ${summary}`,
-            html: `
-                <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
-                    <div style="background: #00D26A; padding: 24px; color: black; text-align: center;">
-                        <h2 style="margin: 0;">Homologação Aprovada</h2>
-                    </div>
-                    <div style="padding: 32px; background: white;">
-                        <p>Olá, uma nova homologação foi agendada e você é o analista responsável.</p>
-                        <div style="background: #f8f9fa; padding: 24px; border-radius: 8px; margin: 24px 0; border-left: 4px solid #00D26A;">
-                            <p style="margin: 0 0 8px 0;"><strong>POC:</strong> ${poc.poc_code}</p>
-                            <p style="margin: 0 0 8px 0;"><strong>Cliente:</strong> ${poc.client_name}</p>
-                            <p style="margin: 0 0 8px 0;"><strong>Analista:</strong> ${selectedAnalyst.name}</p>
-                            <p style="margin: 0 0 8px 0;"><strong>Data:</strong> ${poc.scheduled_date} às ${poc.requested_time}</p>
-                            <p style="margin: 0;"><strong>Local:</strong> ${poc.address || 'Remoto'}</p>
-                        </div>
-                        <p>O convite de calendário (ICS) foi anexado a este email para sincronização com seu Outlook/Google.</p>
-                        <hr style="border: 0; border-top: 1px solid #eee; margin: 32px 0;" />
-                        <p style="font-size: 12px; color: #999; text-align: center;">Sistema Techub POC Automação</p>
-                    </div>
-                </div>
-            `,
-            attachments: [{
-                filename: 'convite.ics',
-                content: icsContent,
-                contentType: 'text/calendar; charset=utf-8; method=REQUEST'
-            }]
+            subject: `📅 Convite de Homologação: ${poc.client_name}`,
+            html,
+            attachments: [{ filename: 'convite.ics', content: icsContent }]
         });
 
-        // 8. Marcar envio do convite
-        await supabase.from('pocs').update({ invite_sent_at: new Date().toISOString() }).eq('id', poc_id);
+        logNotification({ to: recipients.join(', '), subject: 'Aprovação de POC', success: true });
 
-        res.json({
-            success: true,
-            message: `POC aprovada e analista ${selectedAnalyst.name} sorteado com sucesso!`,
-            analyst: selectedAnalyst.name
-        });
+        res.json({ success: true, message: `Aprovado! Analista: ${selectedAnalyst.name}` });
 
     } catch (error) {
-        console.error('Erro no approve-poc:', error);
+        logNotification({ to: 'N/A', subject: 'Falha na Aprovação', success: false, error: error.message });
         res.status(500).json({ success: false, error: error.message });
     }
 });
 
 app.listen(port, () => {
-    console.log(`Servidor SMTP Node rodando em http://localhost:${port}`);
+    console.log(`Servidor Techub Pro rodando em http://localhost:${port}`);
+    console.log(`Logs sendo gravados em: ${logPath}`);
 });
