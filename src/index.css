@@ -18,57 +18,119 @@ html, body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #09090b; /* zinc-950 */
-  color: #f4f4f5;             /* zinc-100 */
+  background-color: #000000; /* Brutal Black */
+  color: #f4f4f5;
+  overflow-x: hidden;
 }
 
-/* ─── Scrollbar ───────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #52525b; }
+/* ─── Scrollbar Aggressive ────────────────────────────────────── */
+::-webkit-scrollbar { 
+  width: 4px; 
+  height: 4px; 
+}
+::-webkit-scrollbar-track { 
+  background: #09090b; 
+  border-left: 1px solid #18181b;
+}
+::-webkit-scrollbar-thumb { 
+  background: #3f3f46; 
+  border-radius: 0; /* Brutalism: No radius */
+}
+::-webkit-scrollbar-thumb:hover { 
+  background: #00D26A; /* High contrast hover */
+}
 
-/* ─── Form inputs (dark-native) ───────────────────────────────── */
+/* ─── Form inputs (Neo-Brutalist) ─────────────────────────────── */
 .input-field {
   display: block;
   width: 100%;
-  padding: 0.625rem 0.875rem;
-  background-color: #18181b;   /* zinc-900 */
-  border: 1px solid #3f3f46;  /* zinc-700 */
-  border-radius: 0.625rem;
+  padding: 0.75rem 1rem;
+  background-color: #09090b;
+  border: 1px solid #27272a;
+  border-radius: 2px; /* Extremely sharp */
   color: #f4f4f5;
   font-size: 0.875rem;
-  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+  font-weight: 500;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   outline: none;
   box-sizing: border-box;
 }
 
 .input-field::placeholder {
-  color: #71717a; /* zinc-500 */
+  color: #52525b; /* Darker placeholder for contrast */
+}
+
+.input-field:hover:not(:disabled) {
+  border-color: #3f3f46;
 }
 
 .input-field:focus {
   border-color: #00D26A;
-  box-shadow: 0 0 0 3px rgba(0, 255, 0, 0.12);
+  background-color: #000000;
+  box-shadow: 4px 4px 0px 0px rgba(0, 210, 106, 0.1); /* Brutalist hard shadow */
 }
 
 .input-field:disabled {
-  opacity: 0.5;
+  opacity: 0.4;
   cursor: not-allowed;
+  background-color: #18181b;
+  border-color: #27272a;
 }
 
 select.input-field option {
-  background-color: #18181b;
+  background-color: #09090b;
   color: #f4f4f5;
 }
 
-/* ─── Misc Utilities ─────────────────────────────────────────── */
+/* ─── Animations & Utilities ──────────────────────────────────── */
 @layer utilities {
   .text-balance { text-wrap: balance; }
 
-  .glass-card {
-    background: rgba(24, 24, 27, 0.7);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(63, 63, 70, 0.6);
+  /* Removed generic glass-card in favor of harsh solid panels */
+  .brutal-panel {
+    background: #09090b;
+    border: 1px solid #27272a;
+    border-radius: 2px;
+  }
+
+  /* Physical Button Press Effect */
+  .btn-push {
+    transition: transform 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .btn-push:active {
+    transform: scale(0.97) translateY(2px);
+  }
+
+  /* Hardware aesthetic accent */
+  .hw-accent {
+    position: relative;
+  }
+  .hw-accent::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background-color: #00D26A;
   }
 }
+
+/* Base Keyframes */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.stagger-1 { animation-delay: 50ms; }
+.stagger-2 { animation-delay: 100ms; }
+.stagger-3 { animation-delay: 150ms; }
+.stagger-4 { animation-delay: 200ms; }

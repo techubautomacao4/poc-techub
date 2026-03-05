@@ -2,7 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { Database } from '../types/database.types';
 import { useAuth } from '../contexts/AuthContext';
-import { BarChart3, Clock, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { BarChart3, Clock, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 type POC = Database['public']['Tables']['pocs']['Row'];
 
@@ -33,62 +34,82 @@ const Dashboard: React.FC = () => {
     };
 
     return (
-        <div className="space-y-8">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight text-zinc-100">
-                    Bem-vindo, <span className="text-zinc-300">{user?.email}</span>
+        <div className="space-y-8 animate-fade-in-up">
+            <div className="border-b border-zinc-800 pb-6 mb-8">
+                <h1 className="text-3xl font-extrabold tracking-tight text-white uppercase">
+                    Painel <span className="text-techub-green">Operacional</span>
                 </h1>
-                <p className="text-zinc-500 mt-2">Visão geral da operação de POCs.</p>
+                <p className="text-zinc-500 font-medium tracking-wide mt-2">Visão geral da operação. Módulo: {user?.email}</p>
             </div>
 
-            {/* Stat Cards — dark with green-accent border */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            {/* Stat Cards — Brutalist Solid, no soft shadows, hard accents */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {[
-                    { label: 'POCs Ativas', value: '12', icon: Clock, color: 'text-blue-400', border: 'border-blue-500/20' },
-                    { label: 'Agendadas', value: '5', icon: CheckCircle2, color: 'text-techub-green', border: 'border-techub-green/20' },
-                    { label: 'SLA Crítico', value: '1', icon: AlertTriangle, color: 'text-red-400', border: 'border-red-500/20' },
-                    { label: 'Total Mês', value: '24', icon: BarChart3, color: 'text-purple-400', border: 'border-purple-500/20' },
+                    { label: 'POCs Ativas', value: '12', icon: Clock, color: 'text-zinc-100', accent: 'border-l-blue-500' },
+                    { label: 'Agendadas', value: '5', icon: CheckCircle2, color: 'text-techub-green', accent: 'border-l-techub-green' },
+                    { label: 'SLA Crítico', value: '1', icon: AlertTriangle, color: 'text-red-500', accent: 'border-l-red-500' },
+                    { label: 'Total Mês', value: '24', icon: BarChart3, color: 'text-zinc-300', accent: 'border-l-zinc-500' },
                 ].map((stat, i) => (
-                    <div key={i} className={`bg-zinc-900 p-6 rounded-xl border ${stat.border} shadow-sm`}>
-                        <div className="flex items-center justify-between">
+                    <div
+                        key={i}
+                        className={`bg-[#09090b] p-6 rounded-sm border border-zinc-800 border-l-4 ${stat.accent} transition-transform hover:-translate-y-1 duration-200 animate-fade-in-up stagger-${(i % 4) + 1}`}
+                    >
+                        <div className="flex items-start justify-between">
                             <div>
-                                <p className="text-sm font-medium text-zinc-500">{stat.label}</p>
-                                <h3 className="text-2xl font-bold mt-1 text-zinc-100">{stat.value}</h3>
+                                <p className="text-xs font-bold uppercase tracking-wider text-zinc-500">{stat.label}</p>
+                                <h3 className="text-4xl font-black mt-2 text-white tracking-tighter">{stat.value}</h3>
                             </div>
-                            <stat.icon className={`w-8 h-8 ${stat.color} opacity-80`} />
+                            <div className="p-2 bg-black border border-zinc-800 rounded-sm">
+                                <stat.icon className={`w-6 h-6 ${stat.color}`} strokeWidth={2.5} />
+                            </div>
                         </div>
                     </div>
                 ))}
             </div>
 
-            {/* Recent POCs Table */}
-            <div className="bg-zinc-900 rounded-xl border border-zinc-800 shadow-sm overflow-hidden">
-                <div className="p-6 border-b border-zinc-800">
-                    <h2 className="text-lg font-semibold text-zinc-100">POCs Recentes</h2>
+            {/* Recent POCs Table - High Contrast */}
+            <div className="bg-[#09090b] rounded-sm border border-zinc-800 overflow-hidden animate-fade-in-up stagger-4">
+                <div className="p-5 border-b border-zinc-800 flex justify-between items-center bg-black">
+                    <h2 className="text-sm font-bold tracking-widest text-zinc-100 uppercase">POCs Recentes</h2>
+                    <Link to="/approval-center" className="text-xs font-bold text-techub-green hover:text-white flex items-center gap-1 transition-colors group">
+                        VER TODAS <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                    </Link>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left">
-                        <thead className="text-xs text-zinc-500 uppercase bg-zinc-950/60">
+                        <thead className="text-[10px] font-black tracking-widest text-zinc-500 uppercase bg-[#09090b]">
                             <tr>
-                                <th className="px-6 py-3">Código</th>
-                                <th className="px-6 py-3">Cliente</th>
-                                <th className="px-6 py-3">Responsável</th>
-                                <th className="px-6 py-3">Status</th>
+                                <th className="px-6 py-4 border-b border-zinc-800">Código</th>
+                                <th className="px-6 py-4 border-b border-zinc-800">Cliente</th>
+                                <th className="px-6 py-4 border-b border-zinc-800">Responsável</th>
+                                <th className="px-6 py-4 border-b border-zinc-800">Status</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-zinc-800">
+                        <tbody className="divide-y divide-zinc-800 bg-[#000000]">
                             {loading ? (
-                                <tr><td colSpan={4} className="p-6 text-center text-zinc-500">Carregando...</td></tr>
+                                <tr>
+                                    <td colSpan={4} className="p-8 text-center">
+                                        <div className="flex justify-center items-center space-x-2">
+                                            <div className="w-2 h-2 bg-techub-green rounded-full animate-bounce"></div>
+                                            <div className="w-2 h-2 bg-techub-green rounded-full animate-bounce [animation-delay:-.3s]"></div>
+                                            <div className="w-2 h-2 bg-techub-green rounded-full animate-bounce [animation-delay:-.5s]"></div>
+                                        </div>
+                                    </td>
+                                </tr>
                             ) : pocs.length === 0 ? (
-                                <tr><td colSpan={4} className="p-6 text-center text-zinc-500">Nenhuma POC encontrada.</td></tr>
+                                <tr>
+                                    <td colSpan={4} className="p-12 text-center text-zinc-600 font-medium">
+                                        NENHUMA POC REGISTRADA NO SISTEMA
+                                    </td>
+                                </tr>
                             ) : (
                                 pocs.map((poc) => (
-                                    <tr key={poc.id} className="hover:bg-zinc-800/50 transition-colors">
-                                        <td className="px-6 py-4 font-medium text-zinc-100">{poc.poc_code}</td>
-                                        <td className="px-6 py-4 text-zinc-400">{poc.client_name}</td>
-                                        <td className="px-6 py-4 text-zinc-400">{poc.commercial_owner}</td>
+                                    <tr key={poc.id} className="hover:bg-[#09090b] transition-colors group cursor-pointer">
+                                        <td className="px-6 py-4 font-bold text-zinc-100 group-hover:text-techub-green transition-colors">{poc.poc_code}</td>
+                                        <td className="px-6 py-4 text-zinc-400 font-medium">{poc.client_name}</td>
+                                        <td className="px-6 py-4 text-zinc-500">{poc.commercial_owner}</td>
                                         <td className="px-6 py-4">
-                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-techub-green/10 text-techub-green">
+                                            <span className="inline-flex items-center px-2 py-1 rounded-sm text-[10px] font-bold border border-techub-green/30 bg-techub-green/10 text-techub-green uppercase tracking-wider">
                                                 Novo
                                             </span>
                                         </td>

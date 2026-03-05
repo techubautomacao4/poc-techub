@@ -43,11 +43,11 @@ type Tab = 'users' | 'analysts' | 'poc_types' | 'availability' | 'smtp';
 // ─── Sub-components ───────────────────────────────────────────
 
 const SectionCard: React.FC<{ title: string; description: string; action?: React.ReactNode; children: React.ReactNode }> = ({ title, description, action, children }) => (
-    <div className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
+    <div className="bg-[#09090b] border border-zinc-800 rounded-sm overflow-hidden brutal-panel animate-fade-in-up">
+        <div className="flex items-center justify-between px-6 py-5 border-b border-zinc-800 bg-black">
             <div>
-                <h3 className="font-bold text-zinc-100">{title}</h3>
-                <p className="text-xs text-zinc-500 mt-0.5">{description}</p>
+                <h3 className="font-black text-white uppercase tracking-tight">{title}</h3>
+                <p className="text-xs font-medium text-zinc-500 mt-1 uppercase tracking-wider">{description}</p>
             </div>
             {action}
         </div>
@@ -101,14 +101,14 @@ const UsersTab: React.FC = () => {
             title="Usuários do Sistema"
             description="Gerencie os acessos e permissões de cada usuário."
             action={
-                <button onClick={() => setCreating(true)} className="flex items-center gap-2 bg-techub-green text-black text-sm font-bold px-4 py-2 rounded-lg hover:bg-techub-green-hover transition-all">
+                <button onClick={() => setCreating(true)} className="flex items-center gap-2 bg-techub-green text-black text-xs font-black uppercase tracking-wider px-4 py-2 rounded-sm transition-colors hover:bg-techub-green-hover btn-push">
                     <Plus className="w-4 h-4" /> Novo Usuário
                 </button>
             }
         >
             {creating && (
-                <div className="mb-6 p-5 border border-techub-green/30 bg-techub-green/5 rounded-xl space-y-4">
-                    <h4 className="font-bold text-sm text-techub-green uppercase tracking-wider">Novo Usuário</h4>
+                <div className="mb-6 p-6 border border-techub-green/30 bg-black rounded-sm space-y-4">
+                    <h4 className="font-black text-xs text-techub-green uppercase tracking-widest border-b border-zinc-800 pb-2">Novo Usuário</h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <input className="input-field" placeholder="Nome completo" value={newUser.name} onChange={e => setNewUser(p => ({ ...p, name: e.target.value }))} />
                         <input className="input-field" placeholder="Email" type="email" value={newUser.email} onChange={e => setNewUser(p => ({ ...p, email: e.target.value }))} />
@@ -133,16 +133,16 @@ const UsersTab: React.FC = () => {
                 {users.map(user => (
                     <div key={user.id} className="flex items-center justify-between py-4">
                         <div className="flex items-center gap-4">
-                            <div className="w-9 h-9 rounded-full bg-techub-green/10 flex items-center justify-center">
-                                <span className="text-sm font-bold text-techub-green">{user.name.charAt(0).toUpperCase()}</span>
+                            <div className="w-10 h-10 rounded-sm border border-techub-green/30 bg-black flex items-center justify-center">
+                                <span className="text-sm font-black text-techub-green uppercase">{user.name.charAt(0)}</span>
                             </div>
                             <div>
-                                <p className="font-semibold text-zinc-100">{user.name}</p>
-                                <p className="text-xs text-zinc-500">{user.email}</p>
+                                <p className="font-bold text-zinc-100 uppercase tracking-tight">{user.name}</p>
+                                <p className="text-xs font-medium text-zinc-500">{user.email}</p>
                             </div>
                         </div>
                         <div className="flex items-center gap-4">
-                            <span className="text-xs font-bold px-2 py-1 rounded-full bg-zinc-800 text-zinc-400">
+                            <span className="text-[10px] font-black uppercase tracking-widest px-2 py-1 border border-zinc-800 bg-zinc-900 rounded-sm text-zinc-400">
                                 {user.roles?.name || 'Sem cargo'}
                             </span>
                             <button
@@ -239,16 +239,16 @@ const AnalystsTab: React.FC = () => {
             title="Analistas & Agendas ICS"
             description="Cadastre os analistas e configure as URLs ICS de suas agendas."
             action={
-                <button onClick={() => setCreating(true)} className="flex items-center gap-2 bg-techub-green text-black text-sm font-bold px-4 py-2 rounded-lg hover:bg-techub-green-hover transition-all">
+                <button onClick={() => setCreating(true)} className="flex items-center gap-2 bg-techub-green text-black text-xs font-black uppercase tracking-wider px-4 py-2 rounded-sm transition-colors hover:bg-techub-green-hover btn-push">
                     <Plus className="w-4 h-4" /> Novo Analista
                 </button>
             }
         >
             {creating && (
-                <div className="mb-6 p-5 border border-techub-green/30 bg-techub-green/5 rounded-xl space-y-4">
-                    <h4 className="font-bold text-sm text-techub-green uppercase tracking-wider">Novo Analista</h4>
+                <div className="mb-6 p-6 border border-techub-green/30 bg-black rounded-sm space-y-4">
+                    <h4 className="font-black text-xs text-techub-green uppercase tracking-widest border-b border-zinc-800 pb-2">Novo Analista</h4>
                     {errorMsg && (
-                        <div className="p-3 text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg flex items-center gap-2">
+                        <div className="p-3 text-xs font-bold uppercase tracking-wider text-red-500 border border-red-500/30 bg-red-500/10 rounded-sm flex items-center gap-2">
                             <AlertCircle className="w-4 h-4" />
                             {errorMsg}
                         </div>
@@ -292,13 +292,13 @@ const AnalystsTab: React.FC = () => {
                 </div>
             )}
 
-            <div className="space-y-3">
+            <div className="space-y-4">
                 {analysts.map(analyst => (
-                    <div key={analyst.id} className="p-4 border border-zinc-800 rounded-xl bg-zinc-900/50">
+                    <div key={analyst.id} className="p-5 border border-zinc-800 rounded-sm bg-black">
                         {editingId === analyst.id ? (
                             <div className="space-y-4">
                                 {errorMsg && editingId === analyst.id && (
-                                    <div className="p-3 text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg flex items-center gap-2">
+                                    <div className="p-3 text-xs font-bold uppercase tracking-wider text-red-500 border border-red-500/30 bg-red-500/10 rounded-sm flex items-center gap-2">
                                         <AlertCircle className="w-4 h-4" />
                                         {errorMsg}
                                     </div>
@@ -343,9 +343,9 @@ const AnalystsTab: React.FC = () => {
                         ) : (
                             <div className="flex items-center justify-between">
                                 <div>
-                                    <div className="flex items-center gap-2">
-                                        <p className="font-semibold text-zinc-100">{analyst.name}</p>
-                                        <span className={`text-xs px-1.5 py-0.5 rounded-full font-medium ${analyst.active ? 'bg-green-900/20 text-green-400' : 'bg-zinc-800 text-zinc-500'} `}>
+                                    <div className="flex items-center gap-3">
+                                        <p className="font-bold text-zinc-100 uppercase tracking-tight">{analyst.name}</p>
+                                        <span className={`text-[10px] uppercase font-black tracking-widest px-2 py-0.5 border rounded-sm ${analyst.active ? 'bg-techub-green/10 border-techub-green/30 text-techub-green' : 'bg-black border-zinc-800 text-zinc-500'} `}>
                                             {analyst.active ? 'Ativo' : 'Inativo'}
                                         </span>
                                     </div>
@@ -424,11 +424,11 @@ const PocTypesTab: React.FC = () => {
         >
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {types.map(type => (
-                    <div key={type.id} className="p-4 border border-zinc-800 rounded-xl bg-zinc-900/50 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-3 h-10 rounded-full" style={{ backgroundColor: type.color_theme }} />
+                    <div key={type.id} className="p-4 border border-zinc-800 rounded-sm bg-black flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <div className="w-1.5 h-10" style={{ backgroundColor: type.color_theme }} />
                             <div>
-                                <p className="font-bold text-zinc-100">{type.name}</p>
+                                <p className="font-black text-zinc-100 uppercase tracking-tight">{type.name}</p>
                                 <p className="text-xs text-zinc-500">{type.duration_hours} horas • Rodízio</p>
                             </div>
                         </div>
@@ -436,18 +436,18 @@ const PocTypesTab: React.FC = () => {
                             <div className="flex items-center gap-2">
                                 <input
                                     type="number"
-                                    className="w-16 bg-zinc-800 border-zinc-700 rounded px-2 py-1 text-sm text-zinc-100 placeholder-zinc-500 outline-none"
+                                    className="w-16 input-field py-1"
                                     value={editData.duration_hours || ''}
                                     onChange={e => setEditData(p => ({ ...p, duration_hours: parseInt(e.target.value) }))}
                                 />
-                                <button onClick={() => handleSave(type.id)} className="p-1.5 text-techub-green hover:bg-techub-green/10 rounded transition-colors">
-                                    <Check className="w-4 h-4" />
+                                <button onClick={() => handleSave(type.id)} className="p-2 bg-techub-green text-black rounded-sm hover:bg-techub-green-hover transition-colors btn-push">
+                                    <Check className="w-3 h-3 font-black" />
                                 </button>
                             </div>
                         ) : (
                             <button
                                 onClick={() => { setEditingId(type.id); setEditData(type); }}
-                                className="p-2 text-zinc-400 hover:text-techub-green hover:bg-zinc-800 rounded-lg transition-colors"
+                                className="p-2 text-zinc-400 hover:text-techub-green hover:bg-zinc-800 border border-transparent hover:border-techub-green/30 rounded-sm transition-all"
                             >
                                 <Pencil className="w-4 h-4" />
                             </button>
@@ -508,7 +508,7 @@ const AvailabilityTab: React.FC = () => {
             description="Defina quando os analistas estão normalmente disponíveis para POCs."
             action={
                 <select
-                    className="bg-zinc-800 border-zinc-700 text-zinc-100 text-sm rounded-lg px-3 py-1.5 outline-none focus:ring-1 focus:ring-techub-green/50"
+                    className="input-field py-1.5 text-xs font-black uppercase tracking-widest cursor-pointer min-w-[150px]"
                     value={selectedAnalyst}
                     onChange={e => setSelectedAnalyst(e.target.value)}
                 >
@@ -516,11 +516,11 @@ const AvailabilityTab: React.FC = () => {
                 </select>
             }
         >
-            <div className="space-y-4">
+            <div className="space-y-2">
                 {availability.map(day => (
-                    <div key={day.id} className="flex items-center justify-between p-4 bg-zinc-900/30 border border-zinc-800 rounded-xl">
+                    <div key={day.id} className="flex items-center justify-between p-4 bg-black border border-zinc-800 rounded-sm">
                         <div className="flex items-center gap-4">
-                            <div className={`w - 10 h - 10 rounded - full flex items - center justify - center font - bold transition - colors ${day.is_active ? 'bg-techub-green text-black' : 'bg-zinc-800 text-zinc-500'} `}>
+                            <div className={`w-8 h-8 rounded-sm flex items-center justify-center font-black transition-colors ${day.is_active ? 'bg-techub-green text-black' : 'border border-zinc-800 bg-black text-zinc-600'} `}>
                                 {weekDays[day.day_of_week].charAt(0)}
                             </div>
                             <span className={`font - semibold ${day.is_active ? 'text-zinc-100' : 'text-zinc-500'} `}>
@@ -532,23 +532,22 @@ const AvailabilityTab: React.FC = () => {
                             {day.is_active ? (
                                 <>
                                     <div className="flex items-center gap-2">
-                                        <div className="flex items-center gap-1.5 bg-zinc-800 border border-zinc-700 rounded-lg px-2 py-1">
-                                            <Clock className="w-3.5 h-3.5 text-zinc-500" />
+                                        <div className="flex items-center gap-1.5 bg-black border border-zinc-800 focus-within:border-techub-green/50 rounded-sm px-2 py-1 transition-colors">
+                                            <Clock className="w-3.5 h-3.5 text-techub-green" />
                                             <input
                                                 type="time"
-                                                className="bg-transparent text-zinc-200 text-sm outline-none"
+                                                className="bg-transparent text-zinc-200 text-sm outline-none font-mono"
                                                 value={day.start_time.substring(0, 5)}
                                                 onChange={e => handleUpdateTime(day.id, 'start_time', e.target.value)}
                                             />
-                                            <span className="text-zinc-600">-</span>
+                                            <span className="text-zinc-600 font-black">-</span>
                                             <input
                                                 type="time"
-                                                className="bg-transparent text-zinc-200 text-sm outline-none"
+                                                className="bg-transparent text-zinc-200 text-sm outline-none font-mono"
                                                 value={day.end_time.substring(0, 5)}
                                                 onChange={e => handleUpdateTime(day.id, 'end_time', e.target.value)}
                                             />
                                         </div>
-
                                     </div>
                                     <button onClick={() => handleToggleDay(day)} className="text-zinc-500 hover:text-red-400 transition-colors ml-4">
                                         <X className="w-5 h-5" />
@@ -702,13 +701,13 @@ const SmtpTab: React.FC = () => {
                         <input className="input-field" placeholder="poc@techub.com.br" value={settings.smtp_from || ''} onChange={e => setSettings(p => ({ ...p, smtp_from: e.target.value }))} />
                     </div>
 
-                    <div className="pt-4 flex flex-col sm:flex-row items-center gap-3">
-                        <button onClick={handleSave} disabled={saveLoading} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-techub-green text-black font-bold px-6 py-2.5 rounded-xl hover:bg-techub-green-hover transition-all shadow-lg shadow-techub-green/10 disabled:opacity-50">
+                    <div className="pt-6 flex flex-col sm:flex-row items-center gap-4 border-t border-zinc-800">
+                        <button onClick={handleSave} disabled={saveLoading} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-techub-green text-black font-black text-xs uppercase tracking-wider px-6 py-3 rounded-sm hover:bg-techub-green-hover transition-colors btn-push disabled:opacity-50">
                             {saveLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : saved ? <Check className="w-4 h-4" /> : <Save className="w-4 h-4" />}
-                            {saved ? 'Salvo!' : 'Salvar Configurações'}
+                            {saved ? 'Salvo!' : 'Salvar'}
                         </button>
 
-                        <button onClick={handleTestConnection} disabled={testLoading} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-zinc-800 text-zinc-100 font-bold px-6 py-2.5 rounded-xl hover:bg-zinc-700 transition-all border border-zinc-700 disabled:opacity-50">
+                        <button onClick={handleTestConnection} disabled={testLoading} className="w-full sm:w-auto flex items-center justify-center gap-2 bg-black text-white font-bold text-xs uppercase tracking-wider px-6 py-3 rounded-sm border border-zinc-800 hover:border-zinc-600 transition-colors btn-push disabled:opacity-50">
                             {testLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
                             Testar Conexão
                         </button>
@@ -768,24 +767,24 @@ const Settings: React.FC = () => {
     ];
 
     return (
-        <div className="space-y-8 max-w-5xl mx-auto pb-20">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight text-zinc-100 flex items-center gap-3">
+        <div className="space-y-8 max-w-6xl mx-auto pb-20 animate-fade-in-up">
+            <div className="border-b border-zinc-800 pb-6">
+                <h1 className="text-3xl font-extrabold tracking-tight text-white flex items-center gap-3 uppercase">
                     <SettingsIcon className="w-8 h-8 text-techub-green" />
                     Configurações
                 </h1>
-                <p className="text-zinc-500 mt-2">Gerencie usuários, analistas, agendas e integrações do sistema.</p>
+                <p className="text-zinc-500 font-medium tracking-wide mt-2">Gerencie usuários, analistas, agendas e integrações do sistema.</p>
             </div>
 
             {/* Tab Navigation */}
-            <div className="flex gap-1 bg-zinc-900 p-1 rounded-xl border border-zinc-800 w-fit">
+            <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-4 w-full">
                 {tabs.map(tab => (
                     <button
                         key={tab.id}
                         onClick={() => setActiveTab(tab.id)}
-                        className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === tab.id
-                            ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                            : 'text-zinc-500 hover:text-zinc-300'
+                        className={`flex items-center gap-2 px-5 py-2.5 rounded-sm text-xs font-black uppercase tracking-widest transition-colors ${activeTab === tab.id
+                            ? 'bg-techub-green text-black border border-techub-green'
+                            : 'bg-black text-zinc-500 border border-zinc-800 hover:text-white hover:border-zinc-700'
                             }`}
                     >
                         {tab.icon}
