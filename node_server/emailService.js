@@ -14,7 +14,8 @@ export async function sendEmail({
     to,
     subject,
     html,
-    attachments = []
+    attachments = [],
+    icalEvent
 }) {
     const transporter = nodemailer.createTransport({
         host,
@@ -43,7 +44,8 @@ export async function sendEmail({
         to,
         subject,
         html,
-        attachments
+        attachments,
+        ...(icalEvent && { icalEvent })
     };
 
     const info = await transporter.sendMail(mailOptions);

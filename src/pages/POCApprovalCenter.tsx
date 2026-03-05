@@ -79,7 +79,7 @@ const POCApprovalCenter: React.FC = () => {
             setRequests(requests.filter(r => r.id !== pocId));
         } catch (error: any) {
             console.error('Error approving POC:', error);
-            alert('Erro ao aprovar: ' + (error.message || 'Erro desconhecido.'));
+            alert('Erro ao aprovar: ' + (error.message || 'Mensagem de rede. Verifique se o servidor Node.js (porta 3002) está operando.'));
         } finally {
             setActionLoading(null);
         }
@@ -90,15 +90,19 @@ const POCApprovalCenter: React.FC = () => {
 
         setActionLoading(pocId);
         try {
-            const { error } = await (supabase
-                .from('pocs') as any)
-                .update({ status: 'REJECTED' })
-                .eq('id', pocId);
+            const smtpServer = import.meta.env.VITE_SMTP_SERVER_URL || 'http://localhost:3002';
+            const response = await fetch(`${smtpServer}/reject-poc?poc_id=${pocId}`, { method: 'POST' });
+            const result = await response.json();
 
-            if (error) throw error;
+            if (!response.ok || !result.success) {
+                throw new Error(result.error || 'Erro ao processar recusa no servidor.');
+            }
+
+            console.log('POC Rejected:', result.message);
             setRequests(requests.filter(r => r.id !== pocId));
         } catch (error: any) {
             console.error('Error rejecting POC:', error);
+            alert('Erro ao rejeitar: ' + (error.message || 'Mensagem de rede. Verifique se o servidor Node.js (porta 3002) está operando.'));
         } finally {
             setActionLoading(null);
         }

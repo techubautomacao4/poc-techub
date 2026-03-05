@@ -46,7 +46,7 @@ function renderTemplate(templateName, vars) {
         APPROVE_POC: `
             <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
                 <div style="background: #00D26A; padding: 24px; color: black; text-align: center;">
-                    <h2 style="margin: 0;">Homologação Aprovada</h2>
+                    <h2 style="margin: 0;">Homologação Aprovada - Convite Analista</h2>
                 </div>
                 <div style="padding: 32px; background: white;">
                     <p>Olá, uma nova homologação foi agendada e você é o analista responsável.</p>
@@ -58,6 +58,43 @@ function renderTemplate(templateName, vars) {
                         <p style="margin: 0;"><strong>Local:</strong> {{address}}</p>
                     </div>
                     <p>O convite de calendário (ICS) foi anexado a este email para sincronização com seu Outlook/Google.</p>
+                    <hr style="border: 0; border-top: 1px solid #eee; margin: 32px 0;" />
+                    <p style="font-size: 12px; color: #999; text-align: center;">Sistema Techub POC Automação</p>
+                </div>
+            </div>
+        `,
+        APPROVE_POC_CLIENT: `
+            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+                <div style="background: #00D26A; padding: 24px; color: black; text-align: center;">
+                    <h2 style="margin: 0;">Sua Solicitação de Homologação foi Aprovada</h2>
+                </div>
+                <div style="padding: 32px; background: white;">
+                    <p>Olá, temos uma ótima notícia! Sua solicitação de homologação foi aprovada pelo nosso time.</p>
+                    <div style="background: #f8f9fa; padding: 24px; border-radius: 8px; margin: 24px 0; border-left: 4px solid #00D26A;">
+                        <p style="margin: 0 0 8px 0;"><strong>POC:</strong> {{poc_code}}</p>
+                        <p style="margin: 0 0 8px 0;"><strong>Cliente:</strong> {{client_name}}</p>
+                        <p style="margin: 0 0 8px 0;"><strong>Analista Responsável:</strong> {{analyst_name}}</p>
+                        <p style="margin: 0 0 8px 0;"><strong>Data Agendada:</strong> {{scheduled_date}} às {{requested_time}}</p>
+                        <p style="margin: 0;"><strong>Local:</strong> {{address}}</p>
+                    </div>
+                    <p>O analista designado entrará em contato em breve, ou comparecerá ao local no horário agendado.</p>
+                    <hr style="border: 0; border-top: 1px solid #eee; margin: 32px 0;" />
+                    <p style="font-size: 12px; color: #999; text-align: center;">Sistema Techub POC Automação</p>
+                </div>
+            </div>
+        `,
+        REJECT_POC_CLIENT: `
+            <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: auto; border: 1px solid #eee; border-radius: 12px; overflow: hidden;">
+                <div style="background: #EF4444; padding: 24px; color: white; text-align: center;">
+                    <h2 style="margin: 0;">Atualização de Solicitação de Homologação</h2>
+                </div>
+                <div style="padding: 32px; background: white;">
+                    <p>Olá. Informamos que a solicitação de homologação (POC) foi recusada após análise técnica/comercial.</p>
+                    <div style="background: #f8f9fa; padding: 24px; border-radius: 8px; margin: 24px 0; border-left: 4px solid #EF4444;">
+                        <p style="margin: 0 0 8px 0;"><strong>POC:</strong> {{poc_code}}</p>
+                        <p style="margin: 0 0 8px 0;"><strong>Cliente:</strong> {{client_name}}</p>
+                    </div>
+                    <p>Para mais informações sobre o motivo da recusa, por favor entre em contato com nosso time responsável.</p>
                     <hr style="border: 0; border-top: 1px solid #eee; margin: 32px 0;" />
                     <p style="font-size: 12px; color: #999; text-align: center;">Sistema Techub POC Automação</p>
                 </div>
@@ -226,7 +263,10 @@ app.post('/approve-poc', async (req, res) => {
         // 5. ICS
         const formatDateICS = (date) => date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
         const icsContent = [
-            'BEGIN:VCALENDAR', 'VERSION:2.0', 'METHOD:REQUEST',
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//Techub//POC System//PT',
+            'METHOD:REQUEST',
             'BEGIN:VEVENT',
             `UID:${poc.id}@techub.com.br`,
             `DTSTAMP:${formatDateICS(new Date())}`,
@@ -234,21 +274,26 @@ app.post('/approve-poc', async (req, res) => {
             `DTEND:${formatDateICS(endTime)}`,
             `SUMMARY:Homologação: ${poc.client_name}`,
             `DESCRIPTION:POC ${poc.poc_code}\\nAnalista: ${selectedAnalyst.name}`,
-            'END:VEVENT', 'END:VCALENDAR'
+            `ATTENDEE;RSVP=TRUE:mailto:${selectedAnalyst.microsoft_email}`,
+            `ORGANIZER;CN="Sistema Techub":mailto:noreply@techub.com.br`,
+            'END:VEVENT',
+            'END:VCALENDAR'
         ].join('\r\n');
 
-        // 6. Template & Envio
-        const html = renderTemplate('APPROVE_POC', {
+        // 6. Temples & Variáveis
+        const vars = {
             poc_code: poc.poc_code,
             client_name: poc.client_name,
             analyst_name: selectedAnalyst.name,
             scheduled_date: datePart,
             requested_time: timePart,
             address: poc.address || 'Remoto'
-        });
+        };
 
-        const recipients = [selectedAnalyst.microsoft_email, poc.contact_email, poc.commercial_contact_email].filter(Boolean);
+        const htmlAnalyst = renderTemplate('APPROVE_POC', vars);
+        const htmlClient = renderTemplate('APPROVE_POC_CLIENT', vars);
 
+        // A. Enviar email para o ANALISTA com ICS
         await sendEmail({
             host: cfg.smtp_host,
             port: cfg.smtp_port,
@@ -256,18 +301,99 @@ app.post('/approve-poc', async (req, res) => {
             user: cfg.smtp_user,
             pass: cfg.smtp_pass,
             from: cfg.formatted_from,
-            to: recipients.join(', '),
+            to: selectedAnalyst.microsoft_email,
             subject: `📅 Convite de Homologação: ${poc.client_name}`,
-            html,
-            attachments: [{ filename: 'convite.ics', content: icsContent }]
+            html: htmlAnalyst,
+            icalEvent: {
+                filename: 'convite.ics',
+                method: 'request',
+                content: icsContent
+            }
         });
 
-        logNotification({ to: recipients.join(', '), subject: 'Aprovação de POC', success: true });
+        // B. Enviar email para Solicitante/Cliente sem ICS
+        const clientRecipientsRaw = [poc.contact_email, poc.commercial_contact_email, poc.manufacturer_contact_email].filter(Boolean);
+        const uniqueClientRecipients = [...new Set(clientRecipientsRaw)].filter(e => e !== selectedAnalyst.microsoft_email).join(', ');
+
+        if (uniqueClientRecipients) {
+            await sendEmail({
+                host: cfg.smtp_host,
+                port: cfg.smtp_port,
+                secure: cfg.smtp_port === '465',
+                user: cfg.smtp_user,
+                pass: cfg.smtp_pass,
+                from: cfg.formatted_from,
+                to: uniqueClientRecipients,
+                subject: `Techub POC: Solicitação Aprovada - ${poc.client_name}`,
+                html: htmlClient
+            });
+        }
+
+        logNotification({ to: `Analyst: ${selectedAnalyst.microsoft_email} | Clients: ${uniqueClientRecipients}`, subject: 'Aprovação de POC', success: true });
 
         res.json({ success: true, message: `Aprovado! Analista: ${selectedAnalyst.name}` });
 
     } catch (error) {
         logNotification({ to: 'N/A', subject: 'Falha na Aprovação', success: false, error: error.message });
+        res.status(500).json({ success: false, error: error.message });
+    }
+});
+
+// Endpoint: Recusar POC (Notifica o Cliente)
+app.post('/reject-poc', async (req, res) => {
+    const { poc_id } = req.query;
+    if (!poc_id) return res.status(400).json({ success: false, error: 'poc_id ausente.' });
+
+    try {
+        const cfg = await getSmtpSettings();
+
+        // 1. Detalhes da POC
+        const { data: poc, error: pocError } = await supabase
+            .from('pocs')
+            .select('*')
+            .eq('id', poc_id)
+            .single();
+
+        if (pocError || !poc) throw new Error('POC não encontrada.');
+
+        // 2. Persistência
+        const now = new Date().toISOString();
+        await supabase.from('pocs').update({
+            status: 'REJECTED',
+            updated_at: now
+        }).eq('id', poc_id);
+
+        // 3. Template & Envio
+        const vars = {
+            poc_code: poc.poc_code,
+            client_name: poc.client_name,
+        };
+
+        const htmlClient = renderTemplate('REJECT_POC_CLIENT', vars);
+
+        const clientRecipientsRaw = [poc.contact_email, poc.commercial_contact_email, poc.manufacturer_contact_email].filter(Boolean);
+        const uniqueClientRecipients = [...new Set(clientRecipientsRaw)].join(', ');
+
+        if (uniqueClientRecipients) {
+            await sendEmail({
+                host: cfg.smtp_host,
+                port: cfg.smtp_port,
+                secure: cfg.smtp_port === '465',
+                user: cfg.smtp_user,
+                pass: cfg.smtp_pass,
+                from: cfg.formatted_from,
+                to: uniqueClientRecipients,
+                subject: `Techub POC: Solicitação Recusada - ${poc.client_name}`,
+                html: htmlClient
+            });
+        }
+
+        logNotification({ to: uniqueClientRecipients || 'N/A', subject: 'Recusa de POC', success: true });
+
+        res.json({ success: true, message: 'POC Recusada e contatos notificados.' });
+
+    } catch (error) {
+        logNotification({ to: 'N/A', subject: 'Falha na Recusa', success: false, error: error.message });
         res.status(500).json({ success: false, error: error.message });
     }
 });

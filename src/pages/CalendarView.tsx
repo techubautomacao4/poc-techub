@@ -145,7 +145,21 @@ const RequestModal: React.FC<RequestModalProps> = ({ date, pocType, onClose, onS
         setSubmitting(true);
         setError(null);
 
-        const pocCode = `POC-${new Date().getFullYear()}-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`;
+        const { data: lastPoc } = await supabase
+            .from('pocs')
+            .select('poc_code')
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+
+        let nextNumber = 1;
+        const pocCodeStr = (lastPoc as any)?.poc_code;
+        if (pocCodeStr && typeof pocCodeStr === 'string' && pocCodeStr.startsWith('POC')) {
+            const parsed = parseInt(pocCodeStr.replace('POC', ''), 10);
+            if (!isNaN(parsed)) nextNumber = parsed + 1;
+        }
+
+        const pocCode = `POC${nextNumber.toString().padStart(5, '0')}`;
 
         const { data: pocData, error: err } = await (supabase.from('pocs') as any).insert({
             poc_code: pocCode,
@@ -497,6 +511,13 @@ const CalendarView: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [currentDate, setCurrentDate] = useState(new Date());
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+    const handleModalSuccess = () => {
+        fetchCalendarData();
+        setToastMessage("Solicitação de POC enviada para análise");
+        setTimeout(() => setToastMessage(null), 5000);
+    };
 
     useEffect(() => {
         const fetchTypes = async () => {
@@ -730,8 +751,19 @@ const CalendarView: React.FC = () => {
                     date={selectedDate}
                     pocType={selectedType}
                     onClose={() => setSelectedDate(null)}
-                    onSuccess={fetchCalendarData}
+                    onSuccess={handleModalSuccess}
                 />
+            )}
+
+            {/* Toast Notification */}
+            {toastMessage && (
+                <div className="fixed bottom-6 right-6 bg-techub-green text-black px-6 py-4 rounded-xl shadow-2xl font-bold flex items-center gap-3 animate-in slide-in-from-bottom-5 z-[60] border border-green-400">
+                    <CheckCircle2 className="w-5 h-5 shrink-0" />
+                    <span>{toastMessage}</span>
+                    <button onClick={() => setToastMessage(null)} className="ml-2 hover:bg-black/10 rounded-lg p-1 transition-colors">
+                        <X className="w-4 h-4" />
+                    </button>
+                </div>
             )}
         </div>
     );
