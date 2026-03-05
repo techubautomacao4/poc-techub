@@ -6,6 +6,8 @@ import Dashboard from './pages/Dashboard';
 import RequestPOC from './pages/RequestPOC';
 import CalendarView from './pages/CalendarView';
 import SLAAnalysis from './pages/SLAAnalysis';
+import POCApprovalCenter from './pages/POCApprovalCenter';
+import Settings from './pages/Settings';
 
 const ProtectedRoute = ({ children, allowedRoles }: { children: JSX.Element, allowedRoles?: string[] }) => {
     const { user, role, loading } = useAuth();
@@ -36,20 +38,32 @@ function AppRoutes() {
                 } />
 
                 <Route path="/request-poc" element={
-                    <ProtectedRoute allowedRoles={['COMERCIAL', 'ADMIN']}>
+                    <ProtectedRoute allowedRoles={['COMERCIAL', 'ADM']}>
                         <RequestPOC />
                     </ProtectedRoute>
                 } />
 
                 <Route path="/calendar" element={
-                    <ProtectedRoute allowedRoles={['ADMIN', 'ANALISTA']}>
+                    <ProtectedRoute allowedRoles={['ADM', 'ANALISTA']}>
                         <CalendarView />
                     </ProtectedRoute>
                 } />
 
                 <Route path="/sla" element={
-                    <ProtectedRoute allowedRoles={['ADMIN']}>
+                    <ProtectedRoute allowedRoles={['ADM']}>
                         <SLAAnalysis />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/approval-center" element={
+                    <ProtectedRoute allowedRoles={['ADM']}>
+                        <POCApprovalCenter />
+                    </ProtectedRoute>
+                } />
+
+                <Route path="/settings" element={
+                    <ProtectedRoute allowedRoles={['ADM']}>
+                        <Settings />
                     </ProtectedRoute>
                 } />
             </Route>
@@ -59,7 +73,7 @@ function AppRoutes() {
 
 function App() {
     return (
-        <Router>
+        <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
             <AuthProvider>
                 <div className="min-h-screen bg-white text-black font-sans">
                     <AppRoutes />

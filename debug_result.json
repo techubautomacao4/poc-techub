@@ -1,0 +1,13 @@
+{
+  "error": "Auth Error: invalid_request",
+  "debug": [
+    "2026-02-24T14:31:42.777Z: Request: month=3, year=2026, poc_type_id=a1000000-0000-0000-0000-000000000001",
+    "2026-02-24T14:31:43.333Z: POC Type: POC Hardware (Duration: 6h, isSoftware: false)",
+    "2026-02-24T14:31:43.426Z: Analysts found: 2, Filtered: 2",
+    "2026-02-24T14:31:43.426Z:  - Analyst: Felipe 1 (HARDWARE, felipe.carvalho@techub.com.br)",
+    "2026-02-24T14:31:43.426Z:  - Analyst: Intergracao N8N Email (HARDWARE, integracao.n8n@techub.com.br)",
+    "2026-02-24T14:31:43.426Z: Authenticating with MS Graph for Tenant: undefined...",
+    "2026-02-24T14:31:43.615Z: Auth Error: AADSTS900023: Specified tenant identifier 'undefined' is neither a valid DNS name, nor a valid external domain. Trace ID: da87af68-6a84-4ea5-b6a3-76c35c814500 Correlation ID: af884660-2fbc-42a1-9469-bf40dde6f0d3 Timestamp: 2026-02-24 14:31:43Z",
+    "2026-02-24T14:31:43.615Z: Critical Error: Auth Error: invalid_request"
+  ]
+}

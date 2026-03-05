@@ -10,10 +10,10 @@ export default {
         // Techub Palette
         techub: {
           green: {
-            DEFAULT: '#00FF00', // Principal
-            light: '#E6FFE6',
-            hover: '#32FF32',
-            dark: '#006400',
+            DEFAULT: '#00D26A', // Principal (verde menos vibrante)
+            light: '#E5F9ED',
+            hover: '#00E676',
+            dark: '#009045',
           },
           gray: {
             50: '#F0F0F0', // Branco base

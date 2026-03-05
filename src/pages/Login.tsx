@@ -31,7 +31,19 @@ const Login: React.FC = () => {
             navigate('/');
         } catch (err: any) {
             console.error("Login component error:", err);
-            setError(err.message || 'Erro ao tentar realizar login. Tente novamente.');
+            // Map common Supabase auth errors to friendly messages
+            let userMessage = 'Erro ao tentar realizar login. Tente novamente.';
+            if (err.message?.includes('Invalid login credentials')) {
+                userMessage = 'Email ou senha incorretos.';
+            } else if (err.message?.includes('Email not confirmed')) {
+                userMessage = 'O email ainda não foi confirmado.';
+            } else if (err.message?.includes('User not found')) {
+                userMessage = 'Usuário não encontrado no sistema.';
+            } else if (err.message) {
+                userMessage = err.message; // Fallback to raw message if not generic
+            }
+
+            setError(userMessage);
         } finally {
             setIsSubmitting(false);
         }
@@ -42,9 +54,9 @@ const Login: React.FC = () => {
         setError('');
         setSuccess('');
         try {
-            // 1. Ensure ADMIN role exists
+            // 1. Ensure ADM role exists
             let adminRoleId: string | null = null;
-            const { data: roles, error: rolesError } = await (supabase.from('roles') as any).select('id').eq('name', 'ADMIN');
+            const { data: roles, error: rolesError } = await (supabase.from('roles') as any).select('id').eq('name', 'ADM');
 
             if (rolesError) throw new Error('Erro ao verificar roles: ' + rolesError.message);
 
@@ -52,16 +64,16 @@ const Login: React.FC = () => {
                 adminRoleId = roles[0].id;
             } else {
                 const { data: newRole, error: createRoleError } = await (supabase.from('roles') as any).insert({
-                    name: 'ADMIN',
+                    name: 'ADM',
                     description: 'Administrador do Sistema'
                 }).select().single();
 
-                if (createRoleError) throw new Error('Erro ao criar role ADMIN: ' + createRoleError.message);
+                if (createRoleError) throw new Error('Erro ao criar role ADM: ' + createRoleError.message);
                 adminRoleId = newRole.id;
             }
 
             // 2. Direct insert into public.users (Custom Auth)
-            const adminEmail = 'admin.poc@techub.com.br';
+            const adminEmail = 'admin@techub.com.br';
             const password = 'admin123';
 
             // Hash the password before saving

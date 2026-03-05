@@ -54,7 +54,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             } else {
                 const userData = sessionData.users;
                 setUser(userData);
-                const roleName = userData.roles?.name || (Array.isArray(userData.roles) ? userData.roles[0]?.name : null);
+                const roleName = userData.roles?.name || (userData.roles as any)?.name;
                 setRole(roleName);
             }
         } catch (err) {
@@ -104,7 +104,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // 3. Set state and storage
             localStorage.setItem('poc_session_token', token);
             setUser(userData);
-            const roleName = userData.roles?.name || (Array.isArray(userData.roles) ? userData.roles[0]?.name : null);
+            const roleName = userData.roles?.name || (userData.roles as any)?.name;
             setRole(roleName);
 
         } catch (err) {
